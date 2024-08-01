@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from timm.models.vision_transformer import PatchEmbed
 from timm.models.densenet import densenet201, DenseNet
+from timm.models.eva import EvaAttention
 
 class Model(nn.Module):
     def __init__(self, num_classes, img_size=256, patch_size=32, in_chans=3):
@@ -11,13 +12,26 @@ class Model(nn.Module):
         self.patchembed = PatchEmbed(
             img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=64
         )
+        self.down_conv = nn.Conv1d(1984, 64, kernel_size=1)
+        # self.cross_attention = EvaBlock(dim=1984, num_heads=8, mlp_ratio=4.0, qkv_bias=True, act_layer=nn.GELU, norm_layer=nn.LayerNorm)
+        self.cross_attention = EvaAttention(dim=64)
+        self.cls = nn.Sequential(
+            nn.Flatten(),
+            nn.LayerNorm(64*64),
+            nn.Linear(64*64, num_classes),
+        )
 
     def forward(self, x):
         embed_tensor = self.patchembed(x) # (B, 64, 64)
         embed_tensor = embed_tensor.reshape(embed_tensor.shape[0], embed_tensor.shape[1], 8, 8)
         image_features = self.main_cnn.forward_features(x) # (B, 1920, 8, 8)
         fusion = torch.cat((embed_tensor, image_features), dim=1)
-        return fusion
+        fusion = nn.Flatten(2)(fusion)
+        fusion = self.down_conv(fusion)
+        x = self.cross_attention(fusion)
+        x = fusion + x
+        x = self.cls(x)
+        return x
     
 if __name__ == "__main__":
     model = Model(num_classes=5)
