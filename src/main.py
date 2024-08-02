@@ -11,8 +11,9 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset, random_split
 from model import Model
 from timm.models.convnext import convnext_atto
+from timm.models.densenet import densenet201
 from timm.models.efficientnet import efficientnet_b0
-from timm.models.resnet import resnet18
+from timm.models.resnet import resnet18, resnet152
 import os
 import json
 
@@ -90,7 +91,7 @@ for i, (img, label) in enumerate(train_loader):
 
 # define model
 model = Model(num_classes=3)
-# model = resnet18(num_classes=3)
+# model = densenet201(num_classes=3)
 model = model.to(device)
 
 # define loss function
@@ -169,6 +170,9 @@ def main():
     }
     with open('history.json', 'w') as f:
         json.dump(history, f)
+
+    # save model (full model)
+    torch.save(model, 'model.pth')
 
 if __name__ == '__main__':
     main()
