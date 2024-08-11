@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset, random_split
-from model import Model
+from model import CombinedModel as Model
 from timm.models.convnext import convnext_atto
 from timm.models.densenet import densenet201
 from timm.models.efficientnet import efficientnet_b0
